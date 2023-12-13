@@ -65,14 +65,18 @@ router.post('/', (req, res) => {
 // update product
 router.put('/:id', (req, res) => {
   // update product data
-  Product.update(req.body, {
+  Product.update({
+    product_name: req.body.product_name,
+    price: req.body.price,
+    stock: req.body.stock,
+    tagIds: req.body.tagIds
+  }, {
     where: {
       id: req.params.id,
     },
   })
     .then((product) => {
       if (req.body.tagIds && req.body.tagIds.length) {
-        
         ProductTag.findAll({
           where: { product_id: req.params.id }
         }).then((productTags) => {
@@ -87,18 +91,17 @@ router.put('/:id', (req, res) => {
             };
           });
 
-            // figure out which ones to remove
+          // figure out which ones to remove
           const productTagsToRemove = productTags
           .filter(({ tag_id }) => !req.body.tagIds.includes(tag_id))
           .map(({ id }) => id);
-                  // run both actions
+          // run both actions
           return Promise.all([
             ProductTag.destroy({ where: { id: productTagsToRemove } }),
             ProductTag.bulkCreate(newProductTags),
           ]);
         });
       }
-
       return res.json(product);
     })
     .catch((err) => {
